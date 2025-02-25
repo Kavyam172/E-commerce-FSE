@@ -1,14 +1,14 @@
-const dbConnect = require('./config/dbConnect');
+const dbConnection = require('../config/dbConnect');
 
 class Product {
 
     constructor() {
-        this.db = dbConnect;
+        this.db = dbConnection;
     }
 
     async getProducts() {
         const sql = 'CALL getProducts()';
-        return await this.db.query(sql);
+        return await this.db.query(sql)
     }
 
     async getProductById(id) {
@@ -55,3 +55,5 @@ class Product {
         return await this.db.query(sql, [min, max]);
     }
 }
+
+module.exports = Product;

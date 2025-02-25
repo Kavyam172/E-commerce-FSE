@@ -17,4 +17,4 @@ dbConnection.connect((err) => {
     }
 });
 
-module.exports = dbConnection;
+module.exports = dbConnection.promise();
