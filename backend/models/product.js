@@ -24,6 +24,7 @@ class Product {
     async updateProduct(id, product) {
         const sql = 'CALL updateProduct(?, ?, ?, ?, ?, ?)';
         return await this.db.query(sql, [id, product.name, product.description, product.price, product.category_id, product.image]);
+        
     }
 
     async deleteProduct(id) {

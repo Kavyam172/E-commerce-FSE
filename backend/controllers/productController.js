@@ -5,7 +5,7 @@ async function getProducts(req, res) {
     const product = new Product();
     try {
         const products = await product.getProducts();
-        res.json(products[0][0]);
+        res.status(200).json(products[0][0]);
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
