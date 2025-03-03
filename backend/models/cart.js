@@ -40,3 +40,5 @@ class Cart {
         return await this.db.query(sql, [productId]);
     }
 }
+
+module.exports = Cart;

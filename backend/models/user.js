@@ -23,7 +23,7 @@ class User {
 
     async updateUser(id, user){
         const sql = 'CALL updateUser(?, ?, ?, ?, ?, ?, ?)';
-        return await this.db.query(sql, [id, user.username, user.email, user.password, user.role, user.image, user.status]);
+        return await this.db.query(sql, [id, user.username,user.password,user.dob, user.email,user.mobileno, user.role]);
     }
 
     async deleteUser(id){
