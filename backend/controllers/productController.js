@@ -1,5 +1,7 @@
 const dbConnection = require("../config/dbConnect");
+const { uploadImage} = require("../utils/cloudinaryUtils");
 const Product = require("../models/product");
+const fs = require("fs");
 
 async function getProducts(req, res) {
     const product = new Product();
@@ -42,6 +44,24 @@ async function updateProduct(req, res) {
     }
 }
 
+async function addImage(req,res) {
+    const product = new Product();
+    try {
+        const imageUrl = await uploadImage(`./uploads/${req.file.filename}`)
+        fs.unlink(`../uploads/${req.file.filename}`, (err) => {
+            if (err) {
+                console.error(err)
+                return
+            }
+        })
+        const { productid, isPrimary } = req.body;
+        const products = product.addProductImage(productid, imageUrl, isPrimary);
+        res.json(products[0][0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+}
+
 async function deleteProduct(req, res) {
     const product = new Product();
     try {
@@ -57,5 +77,6 @@ module.exports = {
     getProductById,
     createProduct,
     updateProduct,
-    deleteProduct
+    deleteProduct,
+    addImage
 }

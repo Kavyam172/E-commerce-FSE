@@ -32,6 +32,11 @@ class Product {
         return await this.db.query(sql, [id]);
     }
 
+    async addProductImage(productid,image_url,isPrimary = false) {
+        const sql = 'CALL AddProductImage(?, ?,?)';
+        return await this.db.query(sql, [productid, image_url, isPrimary]);
+    }
+
     async getProductsByCategory(category_id) {
         //TODO: Implement this method
         const sql = 'CALL getProductsByCategory(?)';
