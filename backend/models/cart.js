@@ -5,39 +5,41 @@ class Cart {
         this.db = dbConnection;
     }
 
-    async getCart() {
-        const sql = 'CALL getCart()';
-        return await this.db.query(sql);
+    async getCarts() {
+        const sql = 'CALL getCarts';
+        return await this.db.query(sql); 
+        
+    }
+    
+    async getOrCreateCartIdByUserId(userid){
+        const sql = 'CALL GetOrCreateCartIdByUser(?)';
+        return await this.db.query(sql,[userid])
     }
 
-    async getCartById(id) {
-        const sql = 'CALL getCartById(?)';
-        return await this.db.query(sql, [id]);
+    async getCartContents(userid){
+        const sql = 'CALL GetCartContentsByUser(?)';
+        return await this.db.query(sql,[userid])
     }
 
-    async createCart(cart) {
-        const sql = 'CALL addCart(?, ?, ?)';
-        return await this.db.query(sql, [cart.customerId, cart.productId, cart.quantity]);
+    async addItem(userid,productid){
+        const sql = 'CALL AddOrUpdateCartItemByUser(?,?,?)';
+        return await this.db.query(sql,[userid,productid,1])
     }
 
-    async updateCart(id, cart) {
-        const sql = 'CALL updateCart(?, ?, ?, ?)';
-        return await this.db.query(sql, [id, cart.userId, cart.productId, cart.quantity]);
+    async reduceItem(user,productid){
+        const sql = 'CALL AddOrUpdateCartItemByUser(?,?,?)';
+        return await this.db.query(sql,[user,productid,-1])
     }
 
-    async deleteCart(id) {
-        const sql = 'CALL deleteCart(?)';
-        return await this.db.query(sql, [id]);
+    async removeItem(userid,productid){
+        const sql = 'CALL RemoveCartItemByUser(?,?)';
+        return await this.db.query(sql,[userid,productid])
     }
 
-    async getCartByUserId(userId) {
-        const sql = 'CALL getCartByCustomerId(?)';
-        return await this.db.query(sql, [userId]);
-    }
+    async clearCart(userid){
+        const sql = 'CALL ClearCartByUser(?)';
+        return await this.db.query(sql,[userid])
 
-    async getCartByProductId(productId) {
-        const sql = 'CALL getCartByProductId(?)';
-        return await this.db.query(sql, [productId]);
     }
 }
 

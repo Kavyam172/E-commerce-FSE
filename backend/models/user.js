@@ -17,8 +17,8 @@ class User {
     }
 
     async createUser(user){
-        const sql = 'CALL addUser(?, ?, ?, ?, ?, ?)';
-        return await this.db.query(sql, [user.username, user.password,user.dob,user.email,user.mobileno, user.role]);
+        const sql = 'CALL addUser(?,?,?,?)';
+        return await this.db.query(sql, [user.fname,user.lname, user.password,user.email]);
     }
 
     async updateUser(id, user){

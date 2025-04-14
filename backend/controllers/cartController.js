@@ -1,58 +1,11 @@
 const Cart = require('../models/cart');
 
-async function getCart(req, res) {
+async function getCarts(req, res) {
     const cart = new Cart();
     try {
-        const carts = await cart.getCart();
+        const carts = await cart.getCarts();
         res.json(carts[0]);
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Server Error" });
-    }
-}
-
-async function getCartById(req, res) {
-    const cart = new Cart();
-    try {
-        const carts = await cart.getCartById(req.params.id);
-        res.json(carts[0]);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Server Error" });
-    }
-}
-
-async function createCart(req, res) {
-    const cart = new Cart();
-    try{
-        const carts = await cart.createCart(req.body);
-        res.json(carts[0]);
-    }
-    catch{
-        console.error(error);
-        res.status(500).json({ message: "Server Error" });
-    }
-}
-
-async function updateCart(req, res) {
-    const cart = new Cart();
-    try{
-        const carts = await cart.updateCart(req.params.id, req.body);
-        res.json(carts[0]);
-    }
-    catch{
-        console.error(error);
-        res.status(500).json({ message: "Server Error" });
-    }
-}
-
-async function deleteCart(req, res) {
-    const cart = new Cart();
-    try{
-        const carts = await cart.deleteCart(req.params.id);
-        res.json(carts[0]);
-    }
-    catch{
         console.error(error);
         res.status(500).json({ message: "Server Error" });
     }
@@ -60,34 +13,73 @@ async function deleteCart(req, res) {
 
 async function getCartByUserId(req, res) {
     const cart = new Cart();
-    try{
-        const carts = await cart.getCartByUserId(req.params.userId);
-        res.json(carts[0]);
-    }
-    catch{
+    try {
+        const userId = req.params.id;
+        const carts = await cart.getCartContents(userId);
+        res.json(carts[0][0]);
+    } catch (error) {
         console.error(error);
         res.status(500).json({ message: "Server Error" });
     }
 }
 
-async function getCartByProductId(req, res) {
+async function addItem(req, res) {
     const cart = new Cart();
-    try{
-        const carts = await cart.getCartByProductId(req.params.productId);
+    try {
+        const { userid, productid } = req.body;
+        const carts = await cart.addItem(userid, productid);
         res.json(carts[0]);
     }
-    catch{
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server Error" });
+    }
+}
+
+async function reduceItem(req, res) {
+    const cart = new Cart();
+    try {
+        const { userid, productid } = req.body;
+        const carts = await cart.reduceItem(userid, productid);
+        res.json(carts[0]);
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server Error" });
+    }
+}
+
+async function removeItem(req, res) {
+    const cart = new Cart();
+    try {
+        const { userid, productid } = req.body;
+        const carts = await cart.removeItem(userid,productid);
+        res.json(carts[0]);
+    }
+    catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server Error" });
+    }
+}
+
+async function clearCart(req, res) {
+    const cart = new Cart();
+    try {
+        const userid = req.body.userid;
+        const carts = await cart.clearCart(userid);
+        res.json(carts[0]);
+    }
+    catch (error) {
         console.error(error);
         res.status(500).json({ message: "Server Error" });
     }
 }
 
 module.exports = {
-    getCart,
-    getCartById,
-    createCart,
-    updateCart,
-    deleteCart,
+    getCarts,
     getCartByUserId,
-    getCartByProductId
+    addItem,
+    reduceItem,
+    removeItem,
+    clearCart
 }

@@ -16,13 +16,13 @@ class Employee {
     }
 
     async createEmployee(employee) {
-        const sql = 'CALL addEmployee(? , ? , ? , ? , ? , ? , ? , ? , ? , ?)';
-        return await this.db.query(sql, [employee.name, employee.email, employee.phone, employee.address, employee.city, employee.country, employee.salary, employee.designation, employee.department, employee.status]);
+        const sql = 'CALL addEmployee(? , ? , ? , ? , ? , ? )';
+        return await this.db.query(sql, [employee.fname, employee.lname, employee.deptid, employee.desigid, employee.salary,employee.userid]);
     }
 
     async updateEmployee(id, employee) {
-        const sql = 'CALL updateEmployee(? , ? , ? , ? , ? , ? , ? , ? , ? , ? , ?)';
-        return await this.db.query(sql, [id, employee.name, employee.email, employee.phone, employee.address, employee.city, employee.country, employee.salary, employee.designation, employee.department, employee.status]);
+        const sql = 'CALL updateEmployee(? , ? , ? , ? , ? , ?)';
+        return await this.db.query(sql, [id, employee.fname, employee.lname, employee.deptid, employee.desigid, employee.salary,employee.userid]);
     }
 
     async deleteEmployee(id) {
@@ -49,5 +49,4 @@ class Employee {
         const sql = 'CALL getEmployeeByStatus(?)';
         return await this.db.query(sql, [status]);
     }
-
 }
