@@ -14,13 +14,16 @@ import Signup from './pages/Signup';
 import NotFound from './pages/NotFound';
 import About from './pages/About';
 import Contact from './pages/Contact';
+import AdminLayout from './layouts/AdminLayout';
+import AdminHome from './admin/AdminHome';
+import AdminPanel from './admin/AdminPanel';
 
 function App() {
   return (
     <AppProvider>
       <Router>
-        <MainLayout>
           <Routes>
+            <Route element={<MainLayout />}>
             <Route path="/" element={<Home />} />
             <Route path="/products" element={<Products />} />
             <Route path="/products/:id" element={<ProductDetail />} />
@@ -32,8 +35,14 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="*" element={<NotFound />} />
+            </Route>
+
+           <Route path="/admin" element={<AdminLayout />}>
+            <Route path="home" element={<AdminPanel />} />
+          </Route>  
+
+
           </Routes>
-        </MainLayout>
       </Router>
     </AppProvider>
   )
