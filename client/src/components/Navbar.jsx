@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { FiShoppingCart, FiUser, FiMenu, FiX, FiSun, FiMoon, FiSearch } from 'react-icons/fi';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { FiShoppingCart, FiUser, FiMenu, FiX, FiSun, FiMoon, FiSearch, FiShoppingBag, FiChevronDown, FiGrid, FiTag, FiHeart, FiHome } from 'react-icons/fi';
+import { getCategories } from '../data/products';
 import { useApp } from '../config/AppContext';
 
 const Navbar = () => {
@@ -8,7 +9,14 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isCategoryMenuOpen, setIsCategoryMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categories, setCategories] = useState([]);
   const location = useLocation();
+  const navigate = useNavigate();
+  const profileMenuRef = useRef(null);
+  const categoryMenuRef = useRef(null);
   
   // Add scroll event listener
   useEffect(() => {
@@ -24,7 +32,29 @@ const Navbar = () => {
   useEffect(() => {
     setIsMenuOpen(false);
     setIsSearchOpen(false);
+    setIsProfileMenuOpen(false);
+    setIsCategoryMenuOpen(false);
   }, [location]);
+  
+  // Load categories
+  useEffect(() => {
+    setCategories(getCategories().filter(cat => cat !== 'All'));
+  }, []);
+  
+  // Close menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setIsProfileMenuOpen(false);
+      }
+      if (categoryMenuRef.current && !categoryMenuRef.current.contains(event.target)) {
+        setIsCategoryMenuOpen(false);
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   
   // Toggle menu
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
@@ -32,159 +62,244 @@ const Navbar = () => {
   // Toggle search
   const toggleSearch = () => setIsSearchOpen(!isSearchOpen);
   
+  // Toggle profile menu
+  const toggleProfileMenu = () => setIsProfileMenuOpen(!isProfileMenuOpen);
+  
+  // Toggle category menu
+  const toggleCategoryMenu = () => setIsCategoryMenuOpen(!isCategoryMenuOpen);
+  
+  // Navigate to profile
+  const goToProfile = () => {
+    navigate('/profile');
+    setIsProfileMenuOpen(false);
+  };
+  
+  // Navigate to category
+  const goToCategory = (category) => {
+    navigate(`/categories/${category}`);
+    setIsCategoryMenuOpen(false);
+    setIsMenuOpen(false);
+  };
+  
+  // Handle search
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery('');
+      setIsSearchOpen(false);
+    }
+  };
+  
   return (
     <nav 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled || isMenuOpen || isSearchOpen || location.pathname !== '/'
+        isScrolled || isMenuOpen || isSearchOpen || isCategoryMenuOpen || isProfileMenuOpen || location.pathname !== '/'
           ? 'bg-white dark:bg-gray-900 shadow-md py-2'
-          : 'py-4 bg-transparent backdrop-blur-sm'
+          : 'py-3 bg-transparent backdrop-blur-sm'
       }`}
     >
       <div className="container mx-auto px-4 flex justify-between items-center">
         {/* Logo */}
-        <Link 
-          to="/" 
-          className={`text-2xl font-bold ${
-            isScrolled || isMenuOpen || isSearchOpen || location.pathname !== '/'
-              ? 'text-primary dark:text-primary'
-              : 'text-gray-900 dark:text-white'
-          } flex items-center`}
-          data-aos="fade-right"
-          data-aos-duration="800"
-        >
-          Drip Deals
-        </Link>
-        
-        {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-8">
+        <div className="flex items-center gap-2 md:gap-8">
           <Link 
             to="/" 
-            className={`nav-link relative py-2 px-1 ${
-              location.pathname === '/' 
-                ? 'text-primary dark:text-primary after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-primary' 
-                : 'text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary'
-            }`}
-            data-aos="fade-down"
-            data-aos-delay="100"
+            className={`text-2xl font-bold ${
+              isScrolled || isMenuOpen || isSearchOpen || isCategoryMenuOpen || isProfileMenuOpen || location.pathname !== '/'
+                ? 'text-primary dark:text-primary'
+                : 'text-gray-900 dark:text-white'
+            } flex items-center`}
+            data-aos="fade-right"
+            data-aos-duration="800"
           >
-            Home
+            <span className="flex items-center gap-1">
+              <FiTag className="text-primary" />
+              Drip Deals
+            </span>
           </Link>
+        </div>
+        
+        {/* Desktop Navigation */}
+        <div className="hidden lg:flex items-center gap-6">
+          <Link 
+            to="/" 
+            className={`nav-link flex items-center gap-1 py-2 px-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${
+              location.pathname === '/' 
+                ? 'text-primary dark:text-primary font-medium' 
+                : 'text-gray-700 dark:text-gray-300'
+            }`}
+          >
+            <FiHome className="text-lg" />
+            <span>Home</span>
+          </Link>
+          
+          {/* Categories Dropdown */}
+          <div className="relative" ref={categoryMenuRef}>
+            <button 
+              onClick={toggleCategoryMenu}
+              className={`flex items-center gap-1 py-2 px-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${
+                location.pathname.includes('/categories') 
+                  ? 'text-primary dark:text-primary font-medium' 
+                  : 'text-gray-700 dark:text-gray-300'
+              }`}
+            >
+              <FiGrid className="text-lg" />
+              <span>Categories</span>
+              <FiChevronDown className={`ml-1 transition-transform ${isCategoryMenuOpen ? 'rotate-180' : ''}`} />
+            </button>
+            
+            {isCategoryMenuOpen && (
+              <div className="absolute left-0 mt-1 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-2 z-50 animate-fadeIn">
+                {categories.map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => goToCategory(category)}
+                    className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center gap-2"
+                  >
+                    <span className="w-2 h-2 rounded-full bg-primary"></span>
+                    {category}
+                  </button>
+                ))}
+                <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
+                <Link 
+                  to="/categories"
+                  className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-primary font-medium"
+                >
+                  View All Categories
+                </Link>
+              </div>
+            )}
+          </div>
+          
           <Link 
             to="/products" 
-            className={`nav-link relative py-2 px-1 ${
-              location.pathname.includes('/products') 
-                ? 'text-primary dark:text-primary after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-primary' 
-                : 'text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary'
+            className={`nav-link flex items-center gap-1 py-2 px-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${
+              location.pathname.includes('/products') && !location.pathname.includes('/categories')
+                ? 'text-primary dark:text-primary font-medium' 
+                : 'text-gray-700 dark:text-gray-300'
             }`}
-            data-aos="fade-down"
-            data-aos-delay="200"
           >
-            Products
+            <FiTag className="text-lg" />
+            <span>Products</span>
           </Link>
+          
           <Link 
             to="/about" 
-            className={`nav-link relative py-2 px-1 ${
+            className={`nav-link flex items-center gap-1 py-2 px-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${
               location.pathname === '/about' 
-                ? 'text-primary dark:text-primary after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-primary' 
-                : 'text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary'
+                ? 'text-primary dark:text-primary font-medium' 
+                : 'text-gray-700 dark:text-gray-300'
             }`}
-            data-aos="fade-down"
-            data-aos-delay="300"
           >
-            About
+            <FiHeart className="text-lg" />
+            <span>About</span>
           </Link>
+          
           <Link 
             to="/contact" 
-            className={`nav-link relative py-2 px-1 ${
+            className={`nav-link flex items-center gap-1 py-2 px-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 ${
               location.pathname === '/contact' 
-                ? 'text-primary dark:text-primary after:absolute after:bottom-0 after:left-0 after:w-full after:h-0.5 after:bg-primary' 
-                : 'text-gray-700 dark:text-gray-300 hover:text-primary dark:hover:text-primary'
+                ? 'text-primary dark:text-primary font-medium' 
+                : 'text-gray-700 dark:text-gray-300'
             }`}
-            data-aos="fade-down"
-            data-aos-delay="400"
           >
-            Contact
+            <FiUser className="text-lg" />
+            <span>Contact</span>
           </Link>
         </div>
         
         {/* Right side icons */}
         <div className="flex items-center gap-4">
-          {/* Desktop search icon */}
-          <div className="hidden md:block">
-            <button
-              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
-              aria-label="Search"
-            >
-              <FiSearch className="text-xl" />
-            </button>
-          </div>
+          {/* Desktop search form */}
+          <form onSubmit={handleSearch} className="hidden md:flex relative items-center">
+            <input
+              type="text"
+              placeholder="Search products..."
+              className="w-60 px-3 py-2 pl-10 bg-gray-100 dark:bg-gray-800 border-0 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all text-sm"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          </form>
           
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
-            aria-label="Toggle theme"
-            data-aos="fade-left"
-          >
-            {isDarkMode ? <FiSun className="text-xl" /> : <FiMoon className="text-xl" />}
-          </button>
+         
           
           <Link 
             to="/cart" 
-            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 relative"
+            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 relative"
             aria-label="Shopping cart"
-            data-aos="fade-left"
-            data-aos-delay="100"
           >
             <FiShoppingCart className="text-xl" />
             {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+              <span className="absolute -top-1 -right-1 bg-primary text-white rounded-full w-5 h-5 flex items-center justify-center text-xs font-medium">
                 {cartCount}
               </span>
             )}
           </Link>
           
           {user ? (
-            <div className="relative group">
+            <div className="relative" ref={profileMenuRef}>
               <button 
-                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
-                data-aos="fade-left"
-                data-aos-delay="200"
+                onClick={toggleProfileMenu}
+                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2 text-gray-700 dark:text-gray-300"
+                aria-expanded={isProfileMenuOpen}
+                aria-haspopup="true"
               >
                 <span className="hidden sm:inline text-sm font-medium">
                   {user.name || 'Account'}
                 </span>
                 <FiUser className="text-xl" />
               </button>
-              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-900 rounded-md shadow-lg py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
-                <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800">
-                  Profile
-                </Link>
-                <Link to="/orders" className="block px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800">
-                  Orders
-                </Link>
-                <button 
-                  onClick={logout}
-                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
-                >
-                  Logout
-                </button>
-              </div>
+              {isProfileMenuOpen && (
+                <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-50 animate-fadeIn border border-gray-100 dark:border-gray-700">
+                  <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+                    <p className="text-sm font-medium">{user.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{user.email}</p>
+                  </div>
+                  <button 
+                    onClick={goToProfile}
+                    className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <FiUser className="mr-2 text-primary" />
+                    Profile
+                  </button>
+                  <button 
+                    onClick={() => {
+                      navigate('/profile?tab=orders');
+                      setIsProfileMenuOpen(false);
+                    }}
+                    className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <FiShoppingBag className="mr-2 text-primary" />
+                    Orders
+                  </button>
+                  <div className="border-t border-gray-100 dark:border-gray-700 my-1"></div>
+                  <button 
+                    onClick={() => {
+                      logout();
+                      setIsProfileMenuOpen(false);
+                    }}
+                    className="flex items-center w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  >
+                    <FiX className="mr-2 text-red-500" />
+                    Logout
+                  </button>
+                </div>
+              )}
             </div>
           ) : (
             <Link 
               to="/login" 
-              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center gap-2"
-              data-aos="fade-left"
-              data-aos-delay="200"
+              className="py-2 px-4 rounded-md bg-primary hover:bg-primary-dark text-white font-medium text-sm transition-colors hidden sm:flex items-center gap-2"
             >
-              <span className="hidden sm:inline text-sm font-medium">Login</span>
-              <FiUser className="text-xl" />
+              <span>Login</span>
+              <FiUser className="text-sm" />
             </Link>
           )}
           
           {/* Mobile search icon */}
           <button 
-            className="md:hidden p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="md:hidden p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
             onClick={toggleSearch}
             aria-label="Search"
           >
@@ -193,7 +308,7 @@ const Navbar = () => {
           
           {/* Mobile menu button */}
           <button 
-            className="md:hidden p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+            className="md:hidden p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
             onClick={toggleMenu}
             aria-label="Toggle menu"
           >
@@ -204,27 +319,40 @@ const Navbar = () => {
       
       {/* Mobile search bar */}
       {isSearchOpen && (
-        <div className="md:hidden bg-white dark:bg-gray-900 shadow-lg animate-slide-down">
+        <div className="md:hidden bg-white dark:bg-gray-900 shadow-lg animate-fadeIn">
           <div className="container mx-auto px-4 py-3">
-            <div className="relative">
+            <form onSubmit={handleSearch} className="relative">
               <input 
                 type="text" 
                 placeholder="Search products..." 
-                className="w-full px-4 py-2 pr-10 bg-gray-100 dark:bg-gray-800 border-0 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all"
+                className="w-full px-4 py-2 pl-10 pr-10 bg-gray-100 dark:bg-gray-800 border-0 rounded-lg focus:ring-2 focus:ring-primary outline-none transition-all"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 autoFocus
               />
-              <button className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-primary transition-colors">
+              <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <button 
+                type="submit"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-primary hover:text-primary-dark transition-colors"
+              >
                 <FiSearch className="w-5 h-5" />
               </button>
-            </div>
+            </form>
             
-            <div className="mt-2 pb-2">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Trending:</p>
+            <div className="mt-3 pb-2">
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Popular Categories:</p>
               <div className="flex flex-wrap gap-2">
-                {['Headphones', 'Smartwatch', 'Camera', 'Speaker'].map((term) => (
-                  <span key={term} className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 py-1 px-2 rounded-full hover:bg-primary hover:text-white cursor-pointer transition-colors">
+                {categories.slice(0, 5).map((term) => (
+                  <button 
+                    key={term} 
+                    onClick={() => {
+                      goToCategory(term);
+                      setIsSearchOpen(false);
+                    }}
+                    className="text-xs bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 py-1 px-2 rounded-full hover:bg-primary hover:text-white cursor-pointer transition-colors"
+                  >
                     {term}
-                  </span>
+                  </button>
                 ))}
               </div>
             </div>
@@ -234,36 +362,89 @@ const Navbar = () => {
       
       {/* Mobile menu */}
       {isMenuOpen && (
-        <div className="md:hidden bg-white dark:bg-gray-900 shadow-lg animate-slide-down">
-          <div className="container mx-auto px-4 py-4 flex flex-col gap-4">
+        <div className="lg:hidden bg-white dark:bg-gray-900 shadow-lg animate-fadeIn">
+          <div className="container mx-auto px-4 py-4 flex flex-col">
             <Link 
               to="/" 
-              className={`py-2 ${location.pathname === '/' ? 'text-primary dark:text-primary' : 'text-gray-700 dark:text-gray-300'}`}
+              className={`py-3 px-2 flex items-center gap-3 ${location.pathname === '/' ? 'text-primary font-medium' : 'text-gray-700 dark:text-gray-300'} border-b border-gray-100 dark:border-gray-800`}
               onClick={() => setIsMenuOpen(false)}
             >
+              <FiHome className="text-lg" />
               Home
             </Link>
+            
+            <div className="py-3 px-2 border-b border-gray-100 dark:border-gray-800">
+              <button 
+                onClick={toggleCategoryMenu}
+                className={`flex items-center justify-between w-full ${location.pathname.includes('/categories') ? 'text-primary font-medium' : 'text-gray-700 dark:text-gray-300'}`}
+              >
+                <div className="flex items-center gap-3">
+                  <FiGrid className="text-lg" />
+                  Categories
+                </div>
+                <FiChevronDown className={`transition-transform ${isCategoryMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {isCategoryMenuOpen && (
+                <div className="mt-2 pl-8 space-y-2 py-2">
+                  {categories.map((category) => (
+                    <button
+                      key={category}
+                      onClick={() => goToCategory(category)}
+                      className="block py-1 text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary transition-colors w-full text-left"
+                    >
+                      {category}
+                    </button>
+                  ))}
+                  <Link 
+                    to="/categories"
+                    className="block py-1 text-primary font-medium w-full text-left"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    View All Categories
+                  </Link>
+                </div>
+              )}
+            </div>
+            
             <Link 
               to="/products" 
-              className={`py-2 ${location.pathname.includes('/products') ? 'text-primary dark:text-primary' : 'text-gray-700 dark:text-gray-300'}`}
+              className={`py-3 px-2 flex items-center gap-3 ${location.pathname.includes('/products') && !location.pathname.includes('/categories') ? 'text-primary font-medium' : 'text-gray-700 dark:text-gray-300'} border-b border-gray-100 dark:border-gray-800`}
               onClick={() => setIsMenuOpen(false)}
             >
+              <FiTag className="text-lg" />
               Products
             </Link>
+            
             <Link 
               to="/about" 
-              className={`py-2 ${location.pathname === '/about' ? 'text-primary dark:text-primary' : 'text-gray-700 dark:text-gray-300'}`}
+              className={`py-3 px-2 flex items-center gap-3 ${location.pathname === '/about' ? 'text-primary font-medium' : 'text-gray-700 dark:text-gray-300'} border-b border-gray-100 dark:border-gray-800`}
               onClick={() => setIsMenuOpen(false)}
             >
+              <FiHeart className="text-lg" />
               About
             </Link>
+            
             <Link 
               to="/contact" 
-              className={`py-2 ${location.pathname === '/contact' ? 'text-primary dark:text-primary' : 'text-gray-700 dark:text-gray-300'}`}
+              className={`py-3 px-2 flex items-center gap-3 ${location.pathname === '/contact' ? 'text-primary font-medium' : 'text-gray-700 dark:text-gray-300'} border-b border-gray-100 dark:border-gray-800`}
               onClick={() => setIsMenuOpen(false)}
             >
+              <FiUser className="text-lg" />
               Contact
             </Link>
+            
+            {!user && (
+              <div className="mt-4">
+                <Link 
+                  to="/login" 
+                  className="block w-full py-3 bg-primary hover:bg-primary-dark text-white font-medium text-center rounded-lg transition-colors"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Login / Sign Up
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       )}

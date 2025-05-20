@@ -1,22 +1,66 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { FiArrowRight, FiShoppingBag, FiTruck, FiCreditCard, FiShield, FiStar, FiBox, FiGift, FiMail, FiSearch, FiHeart, FiTrendingUp, FiPlus, FiX } from 'react-icons/fi';
+import { Link, useNavigate } from 'react-router-dom';
+import { FiArrowRight, FiShoppingBag, FiTruck, FiCreditCard, FiShield, FiStar, FiBox, FiGift, FiMail, FiSearch, FiHeart, FiTrendingUp, FiPlus, FiX, FiGrid } from 'react-icons/fi';
 import ProductCard from '../components/ProductCard';
-import { getFeaturedProducts } from '../data/products';
+import { getFeaturedProducts, getCategories, getProductsByCategory, products } from '../data/products';
 import { useApp } from '../config/AppContext';
 
 const Home = () => {
-  const { theme, isDarkMode } = useApp();
+  const { theme, isDarkMode, addToCart } = useApp();
+  const navigate = useNavigate();
   const [featuredProducts, setFeaturedProducts] = useState([]);
-  const [activeTab, setActiveTab] = useState('all');
+  const [handpickedProducts, setHandpickedProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [categoryProducts, setCategoryProducts] = useState([]);
+  const [activeTab, setActiveTab] = useState('All');
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const heroRef = useRef(null);
   const imageRefs = useRef([]);
   
-  // Load products
+  // Load products and categories
   useEffect(() => {
+    // Get featured products
     setFeaturedProducts(getFeaturedProducts());
+    
+    // Get all categories
+    const allCategories = getCategories();
+    setCategories(allCategories);
+    
+    // Initialize with All products
+    setCategoryProducts(products.slice(0, 6));
+    
+    // Create handpicked collection (products with highest ratings)
+    const handpicked = [...products]
+      .sort((a, b) => b.rating.rate - a.rating.rate)
+      .slice(0, 3);
+    setHandpickedProducts(handpicked);
   }, []);
+  
+  // Update products when category changes
+  useEffect(() => {
+    if (activeTab === 'All') {
+      setCategoryProducts(products.slice(0, 6));
+    } else {
+      const filtered = getProductsByCategory(activeTab).slice(0, 6);
+      setCategoryProducts(filtered);
+    }
+  }, [activeTab]);
+  
+  // Handle category navigation
+  const navigateToCategory = (category) => {
+    if (category === 'All') {
+      navigate('/categories');
+    } else {
+      navigate(`/categories/${category}`);
+    }
+  };
+  
+  // Quick add to cart function
+  const handleQuickAdd = (e, product) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart(product);
+  };
   
   // Initialize the hero animation
   useEffect(() => {
@@ -267,19 +311,19 @@ const Home = () => {
           </div>
           
           {/* Interactive Category Tabs */}
-          <div className="max-w-4xl mx-auto" data-aos="fade-up" data-aos-delay="100">
+          <div className="max-w-6xl mx-auto" data-aos="fade-up" data-aos-delay="100">
             <div className="flex flex-wrap justify-center gap-3 mb-16">
-              {['All Products', 'Electronics', 'Fashion', 'Home', 'Accessories'].map((category, index) => (
+              {categories.slice(0, 5).map((category) => (
                 <button
                   key={category}
-                  onClick={() => setActiveTab(index)}
+                  onClick={() => setActiveTab(category)}
                   className={`relative px-6 py-3 rounded-full text-lg font-medium transition-all duration-300 ${
-                    activeTab === index 
+                    activeTab === category 
                       ? 'text-white' 
                       : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                   }`}
                 >
-                  {activeTab === index && (
+                  {activeTab === category && (
                     <span className="absolute inset-0 bg-gradient-to-r from-primary to-secondary rounded-full -z-10 animate-scale-in" />
                   )}
                   {category}
@@ -287,42 +331,180 @@ const Home = () => {
               ))}
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-10">
-              {[...Array(3)].map((_, i) => (
+            {/* Category product grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-10 mb-16">
+              {categoryProducts.slice(0, 6).map((product, i) => (
                 <div 
-                  key={i}
-                  className="group relative overflow-hidden rounded-2xl aspect-[4/5] bg-gray-100 dark:bg-gray-800"
+                  key={product.id}
+                  className="group relative overflow-hidden rounded-2xl aspect-[4/5] bg-gray-100 dark:bg-gray-800 shadow-md"
                   data-aos="fade-up"
                   data-aos-delay={i * 100}
                 >
                   <img 
-                    src={`https://images.unsplash.com/photo-1581539250439-c96689b516dd?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8Y2hhaXJ8ZW58MHx8MHx8fDA%3D`}
-                    alt="Category"
+                    src={product.image}
+                    alt={product.name}
                     className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                   
+                  <div className="absolute top-4 right-4">
+                    <button 
+                      onClick={(e) => handleQuickAdd(e, product)}
+                      className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm hover:bg-primary text-white flex items-center justify-center transition-all duration-300 shadow-lg transform hover:scale-110"
+                      aria-label="Add to cart"
+                    >
+                      <FiShoppingBag className="w-5 h-5" />
+                    </button>
+                  </div>
+                  
                   <div className="absolute bottom-0 left-0 right-0 p-6 transform translate-y-2 group-hover:translate-y-0 transition-transform">
-                    <h3 className="text-2xl font-bold text-white mb-2">Premium Collection</h3>
-                    <p className="text-white/80 mb-4 transform opacity-0 -translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 delay-100">
-                      Discover our exclusive selection of premium products.
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-medium text-white/80 bg-primary/60 backdrop-blur-sm px-2 py-1 rounded-full">{product.category}</span>
+                      <span className="text-white font-bold">${product.price.toFixed(2)}</span>
+                    </div>
+                    <h3 className="text-xl font-bold text-white mb-2">{product.name}</h3>
+                    <p className="text-white/70 mb-4 text-sm line-clamp-2 transform opacity-0 -translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 delay-100">
+                      {product.description}
                     </p>
                     <Link 
-                      to="/products" 
+                      to={`/products/${product.id}`} 
                       className="inline-flex items-center text-white font-medium transform opacity-0 -translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300 delay-150"
                     >
-                      Explore Now <FiArrowRight className="ml-2" />
+                      View Details <FiArrowRight className="ml-2" />
                     </Link>
                   </div>
                 </div>
               ))}
             </div>
+            
+            {/* View All Categories button */}
+            <div className="flex justify-center">
+              <button 
+                onClick={() => navigateToCategory(activeTab)}
+                className="inline-flex items-center gap-2 bg-primary hover:bg-primary-dark text-white px-8 py-4 rounded-full transition-all duration-300 font-medium shadow-md hover:shadow-lg group"
+              >
+                <FiGrid className="w-5 h-5" />
+                <span>Browse All {activeTab === 'All' ? 'Categories' : `${activeTab} Products`}</span>
+                <FiArrowRight className="transition-transform duration-300 group-hover:translate-x-1" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Handpicked Collection */}
+      <section className="py-24 overflow-hidden">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-end mb-12" data-aos="fade-up">
+            <div>
+              <span className="inline-block px-3 py-1 bg-primary/10 dark:bg-primary/20 text-primary rounded-full text-sm font-medium mb-3">
+                Premium Selection
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold">Handpicked Collection</h2>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 max-w-md mt-3 md:mt-0">
+              Curated with care, our handpicked collection features exceptional items chosen by our experts.
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative">
+            {/* Background design elements */}
+            <div className="absolute -left-64 -top-32 w-96 h-96 bg-primary/5 dark:bg-primary/10 rounded-full filter blur-3xl"></div>
+            <div className="absolute -right-64 -bottom-32 w-96 h-96 bg-secondary/5 dark:bg-secondary/10 rounded-full filter blur-3xl"></div>
+            
+            {handpickedProducts.map((product, index) => (
+              <div
+                key={product.id}
+                className="relative z-10 bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden transform transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl"
+                data-aos="fade-up"
+                data-aos-delay={index * 100}
+              >
+                {/* Product image */}
+                <div className="relative h-80 overflow-hidden">
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    className="w-full h-full object-cover transition-transform duration-700 hover:scale-110"
+                  />
+                  
+                  {/* Top badge */}
+                  <div className="absolute top-4 left-4 z-10">
+                    <span className="bg-white dark:bg-gray-900 text-primary px-3 py-1 rounded-full text-sm font-medium shadow-md">
+                      Top Rated
+                    </span>
+                  </div>
+                  
+                  {/* Rating badge */}
+                  <div className="absolute top-4 right-4 z-10">
+                    <div className="bg-white dark:bg-gray-900 px-2 py-1 rounded-full shadow-md flex items-center gap-1">
+                      <FiStar className="text-yellow-500 fill-yellow-500" />
+                      <span className="font-medium">{product.rating.rate}</span>
+                    </div>
+                  </div>
+                  
+                  {/* Trend label */}
+                  <div className="absolute -top-3 -right-3 z-10">
+                    <div className="relative">
+                      <div className="w-24 h-24 absolute top-0 right-0 text-white overflow-hidden">
+                        <div className="absolute top-0 right-0 w-24 h-24">
+                          <div className="absolute top-0 right-0 transform rotate-45 translate-y-[8px] -translate-x-[15px] w-[120px] text-center text-xs font-bold py-1 bg-gradient-to-r from-red-500 to-orange-500 pl-8 shadow-md">TRENDING</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Gradient overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300"></div>
+                  
+                  {/* Quick actions */}
+                  <div className="absolute bottom-4 right-4 opacity-0 transform translate-y-4 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
+                    <button
+                      onClick={(e) => handleQuickAdd(e, product)}
+                      className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center shadow-lg hover:bg-primary-dark transition-colors"
+                      aria-label="Add to cart"
+                    >
+                      <FiShoppingBag className="w-6 h-6" />
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Product details */}
+                <div className="p-6">
+                  <span className="text-sm text-primary font-medium">{product.category}</span>
+                  <h3 className="text-xl font-bold mt-1 mb-2">{product.name}</h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">{product.description}</p>
+                  
+                  <div className="flex justify-between items-center">
+                    <span className="text-2xl font-bold">${product.price.toFixed(2)}</span>
+                    <Link
+                      to={`/products/${product.id}`}
+                      className="text-gray-700 dark:text-gray-300 font-medium hover:text-primary dark:hover:text-primary transition-colors flex items-center gap-1"
+                    >
+                      <span>View Details</span>
+                      <FiArrowRight className="w-4 h-4" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          {/* View more button */}
+          <div className="flex justify-center mt-16" data-aos="fade-up">
+            <Link
+              to="/products"
+              className="group relative overflow-hidden px-8 py-4 bg-primary hover:bg-primary-dark text-white rounded-full transition-colors shadow-md hover:shadow-lg flex items-center gap-2"
+            >
+              <span className="relative z-10">View All Collections</span>
+              <FiArrowRight className="relative z-10 transition-transform duration-300 group-hover:translate-x-1" />
+              <span className="absolute inset-0 bg-gradient-to-r from-primary to-secondary opacity-0 group-hover:opacity-100 transition-opacity"></span>
+            </Link>
           </div>
         </div>
       </section>
 
       {/* Featured Products */}
-      <section className="py-24">
+      <section className="py-24 bg-gray-50 dark:bg-gray-900/50">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-16" data-aos="fade-up">
             <div>
@@ -342,8 +524,53 @@ const Home = () => {
                 key={product.id} 
                 data-aos="fade-up" 
                 data-aos-delay={index * 100}
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
               >
-                <ProductCard product={product} />
+                <Link to={`/products/${product.id}`} className="block relative">
+                  <div className="relative overflow-hidden h-64">
+                    <img 
+                      src={product.image} 
+                      alt={product.name}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    
+                    {/* Category tag */}
+                    <div className="absolute top-4 left-4 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm text-xs font-medium px-2 py-1 rounded-full">
+                      {product.category}
+                    </div>
+                    
+                    {/* Quick add button */}
+                    <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
+                      <button 
+                        onClick={(e) => handleQuickAdd(e, product)}
+                        className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center shadow-md hover:bg-primary-dark transition-colors"
+                        aria-label="Add to cart"
+                      >
+                        <FiShoppingBag className="w-5 h-5" />
+                      </button>
+                    </div>
+                    
+                    {/* Rating */}
+                    <div className="absolute bottom-4 left-4 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm rounded-full px-2 py-1 flex items-center gap-1">
+                      <FiStar className="w-4 h-4 text-yellow-500 fill-current" />
+                      <span className="text-xs font-medium">{product.rating.rate}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="p-4">
+                    <h3 className="font-semibold text-lg mb-1 line-clamp-1">{product.name}</h3>
+                    <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 line-clamp-2">{product.description}</p>
+                    
+                    <div className="flex justify-between items-center">
+                      <span className="font-bold text-lg">${product.price.toFixed(2)}</span>
+                      <div className="flex space-x-2">
+                        <span className="text-xs px-2 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-full">
+                          {product.inStock ? 'In Stock' : 'Out of Stock'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
               </div>
             ))}
           </div>
@@ -351,7 +578,7 @@ const Home = () => {
           <div className="flex justify-center mt-16">
             <Link 
               to="/products" 
-              className="inline-flex items-center gap-2 px-8 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full hover:shadow-lg transition-all duration-300 font-medium group"
+              className="inline-flex items-center gap-2 px-8 py-3 bg-primary hover:bg-primary-dark text-white rounded-full hover:shadow-lg transition-all duration-300 font-medium group"
             >
               View All Products
               <FiArrowRight className="transition-transform duration-300 group-hover:translate-x-1" />
@@ -644,7 +871,7 @@ const Home = () => {
                   <div className="relative">
                     <div className="w-24 h-24 absolute top-0 right-0 text-white overflow-hidden">
                       <div className="absolute top-0 right-0 w-24 h-24">
-                        <div className="absolute top-0 right-0 transform rotate-45 translate-y-[8px] -translate-x-[15px] w-[120px] text-center text-xs font-bold py-1 bg-gradient-to-r from-red-500 to-orange-500 shadow-md">TRENDING</div>
+                        <div className="absolute top-0 right-0 transform rotate-45 translate-y-[8px] -translate-x-[15px] w-[120px] text-center text-xs font-bold py-1 bg-gradient-to-r from-red-500 to-orange-500 pl-8 shadow-md">TRENDING</div>
                       </div>
                     </div>
                   </div>

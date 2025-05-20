@@ -14,6 +14,8 @@ import Signup from './pages/Signup';
 import NotFound from './pages/NotFound';
 import About from './pages/About';
 import Contact from './pages/Contact';
+import Profile from './pages/Profile';
+import Categories from './pages/Categories';
 import AdminLayout from './layouts/AdminLayout';
 import AdminHome from './admin/AdminHome';
 import AdminPanel from './admin/AdminPanel';
@@ -27,11 +29,14 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/products" element={<Products />} />
             <Route path="/products/:id" element={<ProductDetail />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/categories/:category" element={<Categories />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/order-success" element={<OrderSuccess />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="*" element={<NotFound />} />
